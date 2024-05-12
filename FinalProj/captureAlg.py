@@ -13,7 +13,7 @@ class ThresholdDataBase:
         self.connection = sqlite3.connect(self.db_name)  
         self.cursor = self.connection.cursor()
 
-        self.cursor.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name} (id INTEGER AUTO_INCREMENT PRIMARY KEY, avg_face_count INTEGER)')
+        self.cursor.execute(f'CREATE TABLE IF NOT EXISTS {self.table_name} (id INTEGER AUTO_INCREMENT PRIMARY KEY, avg_person_count INTEGER)')
                 
         self.close_db()
     
@@ -26,24 +26,24 @@ class ThresholdDataBase:
         self.cursor.close()
         self.connection.close()
        
-    def write_threshold(self, avg_face_count): 
+    def write_threshold(self, avg_person_count): 
         self.open_db()  
 
-        self.cursor.execute(f'INSERT INTO {self.table_name} (avg_face_count) VALUES ({avg_face_count})')
+        self.cursor.execute(f'INSERT INTO {self.table_name} (avg_person_count) VALUES ({avg_person_count})')
 
         self.close_db()
 
     def get_threshold(self, thresh_type):
         self.open_db  
         
-        if(thresh_type=='max'):self.cursor.execute(f'SELECT * FROM {self.table_name} ORDER BY avg_face_count DESC LIMIT 1')  
-        elif (thresh_type=='min'): self.cursor.execute(f'SELECT * FROM {self.table_name} ORDER BY avg_face_count ASC LIMIT 1')  
+        if(thresh_type=='max'):self.cursor.execute(f'SELECT * FROM {self.table_name} ORDER BY avg_person_count DESC LIMIT 1')  
+        elif (thresh_type=='min'): self.cursor.execute(f'SELECT * FROM {self.table_name} ORDER BY avg_person_count ASC LIMIT 1')  
         
         row=self.cursor.fetchone() 
         
         self.close_db 
 
-        return float(row['avg_face_count'])
+        return float(row['avg_person_count'])
     
 
 class MQTTClient: 
@@ -86,12 +86,13 @@ class AlgorithmObject:
         self.capture_rate=a_capture_rate 
         self.haar_cascade=cv.CascadeClassifier(str(pathlib.Path(__file__).resolve().parent)+'\\'+a_cascade_file) 
         self.database=a_database
-        self.person_ct=[]
-        
-    def capture_faces(self): 
-        ret, frame =self.cam.read() 
-        self.person_ct.append(len(self.haar_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=3))) 
+        self.person_ct=[] 
        
+    def capture_faces(self): 
+        ret, frame =self.cam.read()  
+        self.person_ct.append(len(self.haar_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=3)))  
+        
+        
         print(f'current person_avg: {self.person_ct[0]}')
         if(len(self.person_ct)>2):   
             moving_avg=statistics.mean(self.person_ct) 
@@ -101,7 +102,7 @@ class AlgorithmObject:
     
     def write_thresh_to_db(self):  
         if(self.database is not None):
-            self.database.write_threshold(avg_face_count=self.person_ct[0]) 
+            self.database.write_threshold(avg_person_count=self.person_ct[0]) 
             print(f'successfully wrote {self.person_ct[0]} to {self.database.db_name} in table {self.database.table_name}')
             self.person_ct.clear
             self.person_ct[0]=0   
@@ -129,15 +130,16 @@ myThresholdDB=ThresholdDataBase (
                                 a_db_name="threshold.db",
                                 a_table_name="thresholds"
                                 )
+
 myAO=AlgorithmObject            (
                                 a_capture_rate=5, 
-                                a_cascade_file="haar_face.xml"
+                                a_cascade_file="haar_face.xml", 
                                 )
 
 myAOThreshold=AlgorithmObject   (
                                 a_capture_rate=5, 
-                                a_cascade_file="haar_face.xml",
-                                a_database=myThresholdDB
+                                a_cascade_file="haarcascade_fullbody.xml",
+                                a_database=myThresholdDB, 
                                 ) 
 
 
@@ -154,7 +156,7 @@ while True:
 
     myNBT3.nonBlock(logic=myAOThreshold.capture_faces,time_interval=myAOThreshold.capture_rate)
     
-    myNBT4.nonBlock(logic=myAOThreshold.write_thresh_to_db, time_interval=15)
+    myNBT4.nonBlock(logic=myAOThreshold.write_thresh_to_db, time_interval=60)
 
     #myNBT2.nonBlock(logic=myMQ.publish, time_interval=myMQ.publish_rate, topic="test/topic", message=myAO.person_ct[0])
     
