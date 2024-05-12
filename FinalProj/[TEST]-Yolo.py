@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 import cv2 
-import pandas as pd
+import pandas as pd 
+import torch
 
 # Load yolov8 model
 model = YOLO('yolov8n.pt')
@@ -20,10 +21,13 @@ while True:
 
         # Get detected objects 
         
-        detections=pd.Series(sorted(results[0].boxes.cls)).value_counts() 
-        
+        meee=sorted(results[0].boxes.cls)[0]
+        detections=pd.Series([int(i.item()) for i in sorted(results[0].boxes.cls)]).value_counts()
+     
+
+        #print({torch.tensor(key, dtype=torch.float32):value for key, value in results[0].names.items()})
+
         detections.index  = detections.index.map(results[0].names)
-        detections.index = detections.index.astype(str)
 
         # Update the index of the series with the new index
    
@@ -32,7 +36,7 @@ while True:
         
         detection_list.append(detections)
 
-        print(f'people in frame: {detections}')
+        #print(f'people in frame: {detections}')
 
         # Initialize counter for "person" labels
 
