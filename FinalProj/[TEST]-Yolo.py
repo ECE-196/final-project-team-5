@@ -21,8 +21,8 @@ while True:
 
         # Get detected objects 
         
-        meee=sorted(results[0].boxes.cls)[0]
-        detections=pd.Series([int(i.item()) for i in sorted(results[0].boxes.cls)]).value_counts()
+        
+        detections=pd.Series(sorted(list(map(int, results[0].boxes.cls.tolist())))).value_counts()
      
 
         #print({torch.tensor(key, dtype=torch.float32):value for key, value in results[0].names.items()})
