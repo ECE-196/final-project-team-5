@@ -1,21 +1,8 @@
-import sqlite3 from 'sqlite3'
+import { DataBase } from './module.js';
 
-const db = new sqlite3.Database('example.db', (err) => {
-    if (err) {
-        console.error('Error opening database:', err);
-    } else {
-        console.log('Database opened successfully');
-    }
+const theDatabase = new DataBase('example.db'); 
+
+theDatabase.manageDB((db)=>{
+    db.run("CREATE TABLE IF NOT EXISTS Risk_Table (id INTEGER AUTO INCREMENT PRIMARY KEY, risk_lvl_text VARCHAR(50), risk_lvl FLOAT, risk_lvl_timestamp TIMESTAMP, machine_id INTEGER)");
 });
 
-db.serialize(() => { 
-    db.run("CREATE TABLE IF NOT EXISTS FaceCounts (id INTEGER AUTO INCREMENT PRIMARY KEY, face_count TEXT, face_count_timestamp TIMESTAMP, machine_id INTEGER)");
-});
-
-db.close((err) => {
-    if (err) {
-        console.error('Error closing the database:', err);
-    } else {
-        console.log('Database closed successfully');
-    }
-});

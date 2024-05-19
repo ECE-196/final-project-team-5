@@ -2,6 +2,9 @@ from ultralytics import YOLO
 import cv2 
 import pandas as pd 
 import torch
+import time
+
+timeNow=time.time()
 
 # Load yolov8 model
 model = YOLO('yolov8n.pt')
@@ -16,18 +19,26 @@ while True:
     ret, frame = cap.read()
 
     if ret:
-        # Detect objects
+        # Detect objects 
+        
+        ''' 
+        results = model.track(frame, persist=True)
+        '''
         results = model(frame)
 
         # Get detected objects 
         
-        
-        detections=pd.Series(sorted(list(map(int, results[0].boxes.cls.tolist())))).value_counts()
-     
+        #from the results object --> get the boxes attribute 
+        #from the boxes attribute--> get the cls attribute (returns a tensor of dtype float32) 
+        #turn that object into a list of floats and then map that to int lists sort them, and you get your dataframe
 
-        #print({torch.tensor(key, dtype=torch.float32):value for key, value in results[0].names.items()})
-
+        '''
+        detections=pd.Series(list(map(int, results[0].boxes.cls.tolist()))).value_counts()
         detections.index  = detections.index.map(results[0].names)
+        ''' 
+
+        detections = pd.Series(list(map(int, results[0].boxes.cls.tolist()))).value_counts().rename(index=results[0].names)
+
 
         # Update the index of the series with the new index
    
@@ -36,7 +47,7 @@ while True:
         
         detection_list.append(detections)
 
-        #print(f'people in frame: {detections}')
+      
 
         # Initialize counter for "person" labels
 
@@ -47,11 +58,13 @@ while True:
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(25) & 0xFF == ord('q'):
+            break 
+
+        if time.time()-timeNow>25:
             break
 
 # Release the video capture device and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows() 
 
-for d in detection_list: 
-    print(d)
+print(len(detection_list))

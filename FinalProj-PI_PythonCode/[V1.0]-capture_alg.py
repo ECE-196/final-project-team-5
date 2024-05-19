@@ -85,14 +85,15 @@ class AlgorithmObject:
         self.cam=cv.VideoCapture(a_camera_no) 
         self.capture_rate=a_capture_rate 
         self.haar_cascade=cv.CascadeClassifier(str(pathlib.Path(__file__).resolve().parent)+'\\'+a_cascade_file) 
-        self.database=a_database
+        self.database=a_database 
+        
         self.person_ct=[] 
        
     def capture_faces(self): 
-        ret, frame =self.cam.read()  
+        ret, frame =self.cam.read()   
         self.person_ct.append(len(self.haar_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=3)))  
         
-        
+
         print(f'current person_avg: {self.person_ct[0]}')
         if(len(self.person_ct)>2):   
             moving_avg=statistics.mean(self.person_ct) 

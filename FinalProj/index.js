@@ -1,43 +1,54 @@
 import express from 'express'; 
 import bodyParser from 'body-parser';  
 import mqtt from 'mqtt';
-import sqlite3 from 'sqlite3'
+import { DataBase } from './module.js'; 
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { createRequire } from 'module';
 
-sqlite3.verbose();
+// Create a require function to load CommonJS modules
+const require = createRequire(import.meta.url);
+
+// Get the directory path of the current script
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Use __dirname to construct the absolute path to the HTML file
+const htmlFilePath = join(__dirname, 'dummy.html');
 
 const app = express(); 
 const PORT = 5000;
 
+app.use(express.static(join(__dirname, 'public')));
+
+
+//------------------------------------------ RESTFUL API ---------------------------------------------//
+
 app.use(bodyParser.json());  
 
-app.get('/', (req,res)=>{ 
-    const db = new sqlite3.Database('example.db', (err) => {
-        if (err) {
-            console.error('Error opening database:', err);
-        } else {
-            console.log('Database opened successfully');
-        }
+app.get('/', (req,res)=>{  
+    const theDatabase=new DataBase('example.db'); 
+    theDatabase.manageDB((db)=>{ 
+        db.each("SELECT * FROM Risk_Table ORDER BY id DESC LIMIT 1", (err, row) => {
+            if (err)    console.error('Error:', err);
+            else { 
+                res.json({ 
+                    'risk_lvl_text':row.risk_lvl_text, 
+                    'risk_lvl':row.risk_lvl,
+                    'risk_lvl_timestamp':row.risk_lvl_timestamp,
+                    'machine_id':row.machine_id
+                }) 
+                console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, Machine ID: ${row.machine_id} `); 
+            }       
+        }); 
     });
-    db.serialize(() => { 
-        db.each("SELECT * FROM FaceCounts", (err, row) => {
-            if (err) {
-            console.error('Error:', err);
-            } else {
-            console.log(`ID: ${row.id}, Face Count: ${row.face_count}, Face Count Timestamp: ${row.face_count_timestamp}, Machine ID: ${row.machine_id} `); 
-            }
-        });
-    });
-    db.close((err) => {
-        if (err) {
-            console.error('Error closing the database:', err);
-        } else {
-            console.log('Database closed successfully');
-        }
-    });
-
 });
 
+app.get('/dummy', (req, res) => {
+    res.sendFile(htmlFilePath);
+  });
 
+//------------------------------------------ MQTT CODE ---------------------------------------------//
 
 var options = {
     host: 'a98bdda5eadc4d9db9ad2f32aceb4ae4.s1.eu.hivemq.cloud',
@@ -47,15 +58,15 @@ var options = {
     password: 'D:k.0tg9@a53bJCB!uMO'
 }
 
+const topic = 'test/topic';
 var client = mqtt.connect(options); // Public test broker
 
-const topic = 'test/topic';
 
 client.on('connect', () => {
     console.log('Connected to MQTT broker');
     client.subscribe(topic, (err) => {
-        if (!err) console.log(`Subscribed to topic: ${topic}`);
-        else console.error('Subscription error:', err);    
+        if (!err)   console.log(`Subscribed to topic: ${topic}`);
+        else        console.error('Subscription error:', err);    
     });
 });
 
@@ -64,30 +75,17 @@ client.on('error', (err) => {
 });
 
 client.on('message', (topic, message) => {
-    console.log(`Received message on topic "${topic}": ${message.toString()}`);
-    const db = new sqlite3.Database('example.db', (err) => {
-        if (err) {
-            console.error('Error opening database:', err);
-        } else {
-            console.log('Database opened successfully');
-        }
-    });
-    db.serialize(() => { 
-        db.run(`INSERT INTO FaceCounts (face_count, face_count_timestamp, machine_id) VALUES (${message.toString()},${(Math.floor(Date.now() / 1000)).toString()} , 1)`, (err) => {
-            if (err) {
-                console.error('Error inserting data:', err);
-            } else {
-                console.log('Data inserted successfully');
-            }
+    console.log(`Received message on topic "${topic}": ${message.toString()}`); 
+    var theDict = JSON.parse(message);
+    const theDatabase = new DataBase('example.db'); 
+
+    theDatabase.manageDB((db)=>{ 
+        db.run(`INSERT INTO Risk_Table (risk_lvl_text, risk_lvl, risk_lvl_timestamp, machine_id) VALUES ("${theDict['risk_lvl_text']}", ${theDict['risk_lvl']},${(Math.floor(Date.now() / 1000)).toString()} , 1)`, (err) => {
+            if(err) console.error('Error inserting data:', err);
+            else    console.log('Data inserted successfully');
         });
     });
-    db.close((err) => {
-        if (err) {
-            console.error('Error closing the database:', err);
-        } else {
-            console.log('Database closed successfully');
-        }
-    });
+    
 });
 
 app.listen(PORT, ()=>{console.log( `Server running on port: http://localhost:${PORT}`)});
