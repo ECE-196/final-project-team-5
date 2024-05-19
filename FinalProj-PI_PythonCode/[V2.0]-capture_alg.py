@@ -4,7 +4,8 @@ import paho.mqtt.client as mqtt
 import statistics 
 import sqlite3  
 from ultralytics import YOLO
-import pandas as pd 
+import pandas as pd  
+import os
 
 
 
@@ -178,15 +179,17 @@ myNBT=NonBlockingTimer()
 myNBT2=NonBlockingTimer() 
 myNBT4=NonBlockingTimer()
 
+current_folder_name="FinalProj-PI_PythonCode"
+
 myThresholdDB=ThresholdDataBase ( 
-                                a_db_name="threshold.db",
+                                a_db_name=f"{current_folder_name}/threshold.db",
                                 a_table_name="thresholds"
                                 )
 
 myAO=AlgorithmObject            (
                                 a_camera=0,
                                 a_capture_rate=5, 
-                                a_model='yolov8n.pt', 
+                                a_model=f'{current_folder_name}/yolov8n.pt', 
                                 a_priority="speed",
                                 a_database=myThresholdDB,
                                 )
