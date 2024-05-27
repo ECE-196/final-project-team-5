@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 var theAMPM='AM'; 
                 if(theHours==0)theHours= 12; 
                 if((theDate.getHours()/12)>=1) theAMPM='PM';
-                riskDiv.innerHTML=`${response.risk_lvl_text} at ${theHours}:${theDate.getMinutes()}:${theDate.getSeconds()}${theAMPM}`; 
+                riskDiv.innerHTML=`${response.risk_lvl_text} at ${theHours}:${theDate.getMinutes()}:${theDate.getSeconds()}${theAMPM} at ${response.location}`; 
             });
     },1000);
     

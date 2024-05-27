@@ -26,19 +26,41 @@ app.use(express.static(join(__dirname, 'public')));
 
 app.use(bodyParser.json());  
 
-app.get('/', (req,res)=>{  
+app.get('/recent/:location', (req,res)=>{  
     const theDatabase=new DataBase('example.db'); 
     theDatabase.manageDB((db)=>{ 
-        db.each("SELECT * FROM Risk_Table ORDER BY id DESC LIMIT 1", (err, row) => {
+        db.each(`SELECT * FROM Risk_Table WHERE location="${req.params.location.replace(/_/g," ")}" ORDER BY id DESC LIMIT 1`, (err, row) => {
             if (err)    console.error('Error:', err);
             else { 
                 res.json({ 
                     'risk_lvl_text':row.risk_lvl_text, 
                     'risk_lvl':row.risk_lvl,
                     'risk_lvl_timestamp':row.risk_lvl_timestamp,
-                    'machine_id':row.machine_id
+                    'location':row.location
                 }) 
-                console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, Machine ID: ${row.machine_id} `); 
+                console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, location: ${row.location} `); 
+            }       
+        }); 
+    });
+});
+
+app.get(`/all/:location`, (req,res)=>{   
+    const theDatabase=new DataBase('example.db'); 
+    theDatabase.manageDB((db)=>{ 
+        db.all(`SELECT * FROM Risk_Table WHERE location="${req.params.location.replace(/_/g," ")}" ORDER BY id DESC`, (err, rows) => {
+            if (err)    console.error('Error:', err);
+            else {    
+                let json_array=[];
+                rows.forEach((row)=>{ 
+                    json_array.push({ 
+                        'risk_lvl_text':row.risk_lvl_text, 
+                        'risk_lvl':row.risk_lvl,
+                        'risk_lvl_timestamp':row.risk_lvl_timestamp,
+                        'location':row.location
+                    });
+                    console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, location: ${row.location} `);  
+                }); 
+                res.json(json_array);
             }       
         }); 
     });
@@ -80,12 +102,11 @@ client.on('message', (topic, message) => {
     const theDatabase = new DataBase('example.db'); 
 
     theDatabase.manageDB((db)=>{ 
-        db.run(`INSERT INTO Risk_Table (risk_lvl_text, risk_lvl, risk_lvl_timestamp, machine_id) VALUES ("${theDict['risk_lvl_text']}", ${theDict['risk_lvl']},${(Math.floor(Date.now() / 1000)).toString()} , 1)`, (err) => {
+        db.run(`INSERT INTO Risk_Table (risk_lvl_text, risk_lvl, risk_lvl_timestamp, location) VALUES ("${theDict['risk_lvl_text']}", ${theDict['risk_lvl']},${(Math.floor(Date.now() / 1000)).toString()} ,"${theDict['location']}" )`, (err) => {
             if(err) console.error('Error inserting data:', err);
             else    console.log('Data inserted successfully');
         });
     });
-    
 });
 
 app.listen(PORT, ()=>{console.log( `Server running on port: http://localhost:${PORT}`)});

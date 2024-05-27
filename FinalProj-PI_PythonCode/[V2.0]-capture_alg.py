@@ -5,7 +5,8 @@ import statistics
 import sqlite3  
 from ultralytics import YOLO
 import pandas as pd  
-import os
+import os 
+import pathlib
 
 
 
@@ -96,7 +97,7 @@ class NonBlockingTimer:
 
 
 class AlgorithmObject: 
-    def __init__(self, a_camera=0, a_capture_rate=2, a_model="", a_database=None, a_priority="speed"): 
+    def __init__(self, a_camera=0, a_capture_rate=2, a_model="", a_database=None, a_priority="speed", a_location='Geisel Library'): 
         self.cam=cv.VideoCapture(a_camera) 
         self.capture_rate=a_capture_rate  
         self.model=YOLO(a_model) 
@@ -104,7 +105,8 @@ class AlgorithmObject:
         self.priority=a_priority #the collection type to prioritize
         self.person_ct=[] #the moving average
         self.max=0 #the max collected since write_thresh_to_db(self) was called
-        self.person_risk_lvl=['VERY HIGH','HIGH', 'MEDIUM', 'LOW', 'VERY LOW']
+        self.person_risk_lvl=['VERY LOW','LOW','MEDIUM','HIGH','VERY HIGH'] 
+        self.location=a_location
        
     def capture_people(self): 
         '''  
@@ -171,7 +173,7 @@ class AlgorithmObject:
         if(round(risk_lvl)>(len(self.person_risk_lvl)-1)): risk_lvl=len(self.person_risk_lvl)-1
 
 
-        return f' {{\"risk_lvl_text\": \"{self.person_risk_lvl[round(risk_lvl)]}\", \"risk_lvl\": {risk_lvl}}}'
+        return f' {{\"risk_lvl_text\": \"{self.person_risk_lvl[round(risk_lvl)]}\", \"risk_lvl\": {risk_lvl}, \"location\": \"{self.location}\"}}'
 
         
 
@@ -179,19 +181,19 @@ myNBT=NonBlockingTimer()
 myNBT2=NonBlockingTimer() 
 myNBT4=NonBlockingTimer()
 
-current_folder_name="FinalProj-PI_PythonCode"
 
 myThresholdDB=ThresholdDataBase ( 
-                                a_db_name=f"{current_folder_name}/threshold.db",
+                                a_db_name=f"{pathlib.Path(__file__).resolve().parent}/threshold.db",
                                 a_table_name="thresholds"
                                 )
 
 myAO=AlgorithmObject            (
                                 a_camera=0,
                                 a_capture_rate=5, 
-                                a_model=f'{current_folder_name}/yolov8n.pt', 
+                                a_model=f'{pathlib.Path(__file__).resolve().parent}/yolov8n.pt', 
                                 a_priority="speed",
-                                a_database=myThresholdDB,
+                                a_database=myThresholdDB, 
+                                a_location='Geisel Library'
                                 )
 
 myMQ=MQTTClient                 (
