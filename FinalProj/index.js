@@ -1,10 +1,11 @@
 import express from 'express'; 
 import bodyParser from 'body-parser';  
-import mqtt from 'mqtt';
+import mqtt from 'mqtt'; 
 import { DataBase } from './module.js'; 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createRequire } from 'module';
+import { createRequire } from 'module'; 
+import { exec } from 'child_process';
 
 // Create a require function to load CommonJS modules
 const require = createRequire(import.meta.url);
@@ -14,7 +15,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Use __dirname to construct the absolute path to the HTML file
-const htmlFilePath = join(__dirname, 'dummy.html');
+const htmlFilePath = join(__dirname, 'dummy.html');  
+const htmlFilePath2 = join(__dirname, 'website.html'); 
+const htmlFilePath3 = join(__dirname, 'about.html'); 
+const pythonScript1 = join(__dirname, '[V1.0]-Bike_Theft_Data_Analysis.py'); 
+const pythonScript2 = join(__dirname, '[TEST]-Web_Scraper.py');
 
 const app = express(); 
 const PORT = 5000;
@@ -38,7 +43,7 @@ app.get('/recent/:location', (req,res)=>{
                     'risk_lvl_timestamp':row.risk_lvl_timestamp,
                     'location':row.location
                 }) 
-                console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, location: ${row.location} `); 
+                console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp: ${row.risk_lvl_timestamp}, location: ${row.location} `); 
             }       
         }); 
     });
@@ -58,7 +63,7 @@ app.get(`/all/:location`, (req,res)=>{
                         'risk_lvl_timestamp':row.risk_lvl_timestamp,
                         'location':row.location
                     });
-                    console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp${row.risk_lvl_timestamp}, location: ${row.location} `);  
+                    console.log(`ID: ${row.id}, risk_lvl_text: ${row.risk_lvl_text}, risk_lvl: ${row.risk_lvl}, risk_lvl_timestamp: ${row.risk_lvl_timestamp}, location: ${row.location} `);  
                 }); 
                 res.json(json_array);
             }       
@@ -66,9 +71,72 @@ app.get(`/all/:location`, (req,res)=>{
     });
 });
 
+app.get(`/police_data_location`, (req,res)=>{   
+    const theDatabase=new DataBase('police_data.db'); 
+    theDatabase.manageDB((db)=>{ 
+        db.all('SELECT location, COUNT(*) AS location_count FROM users GROUP BY location', (err, rows) => {
+            if (err)    console.error('Error:', err);
+            else {     
+                let json_object={};
+                rows.forEach((row)=>{  
+                    //console.log(`row:${JSON.stringify(row)}`)
+                    json_object [row.Location] =row.location_count
+                    console.log(`location: ${row.location}, time_counts: ${row.location_count} `);  
+                }); 
+                res.json(json_object);
+            }       
+        }); 
+    });
+});
+
+app.get(`/police_data_time`, (req,res)=>{   
+    const theDatabase=new DataBase('police_data.db'); 
+    theDatabase.manageDB((db)=>{ 
+        db.all('SELECT "Time Occurred", COUNT(*) AS time_count FROM users GROUP BY "Time Occurred"', (err, rows) => {
+            if (err)    console.error('Error:', err);
+            else {     
+                let json_object={};
+                rows.forEach((row)=>{  
+                    //console.log(`row:${JSON.stringify(row)}`)
+                    json_object [row["Time Occurred"]] =row.time_count
+                    console.log(`Time Occurred: ${row["Time Occurred"]}, time_counts: ${row.time_count} `);  
+                }); 
+                res.json(json_object);
+            }       
+        }); 
+    });
+});
+
+app.get('/update_pd_data',(req, res)=>{  
+    console.log(res);
+    exec(`python ${pythonScript1}`,(error, stdout, stderr)=>{ 
+        if(error){res.json({"output":"BAD_ERROR"})} 
+        else if(stderr){res.json({"output":"BAD_STDERR"})} 
+        else {res.json({"output":"SUCCESS"})};
+    });
+});
+
+app.get('/update_pdfs',(req, res)=>{ 
+    exec(`python ${pythonScript2}`,(error, stdout, stderr)=>{ 
+        if(error){res.json({"output":"BAD_ERROR"})} 
+        else if(stderr){res.json({"output":"BAD_STDERR"})} 
+        else {res.json({"output":"SUCCESS"})}; 
+    });
+}); 
+
+
+
 app.get('/dummy', (req, res) => {
     res.sendFile(htmlFilePath);
-  });
+  }); 
+
+app.get('/main',(req, res)=>{ 
+    res.sendFile(htmlFilePath2)
+}); 
+
+app.get('/about',(req, res)=>{ 
+    res.sendFile(htmlFilePath3);
+});
 
 //------------------------------------------ MQTT CODE ---------------------------------------------//
 

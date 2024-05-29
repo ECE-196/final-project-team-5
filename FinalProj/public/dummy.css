@@ -1,5 +1,47 @@
-.risk_class{ 
-    width:200px; 
-    height:60px; 
-    font-family: 'Courier New', Courier, monospace;
+
+body {
+    font-family: Arial, sans-serif; /* Specify your desired font stack */
+    font-size: 16px; /* Set the default font size */
+    /* Additional font properties such as font-weight, font-style, etc. can also be set here */ 
+    text-align: center;
+    padding-left: 250px; 
+    padding-right: 250px;
+}  
+.options_class{ 
+    background-color: rgb(224, 237, 244); 
+    padding: 10px; 
+    border-radius: 30px;
+
+}  
+h1{ 
+    background-color: rgb(91, 161, 199); 
+    padding: 10px; 
+    color: white;
+    border-radius: 30px; 
 }
+h2{ 
+    background-color: rgb(206, 219, 226); 
+    padding: 10px;
+    border-radius: 30px;
+} 
+br{ 
+    padding:10px; 
+}
+button{
+    background-color: rgb(91, 156, 191); 
+    color: black;
+    font-family: 'Red Hat Display', sans-serif; 
+    border-radius: 30px; 
+    font-size:15px; 
+    font-weight:600; 
+    transition:background-color 0.5s ease, transform 0.3s ease-in-out;  
+    margin:20px; 
+    border:none;
+    padding: 10px 20px;
+}  
+   
+button:hover{  
+    background:rgb(2, 70, 115); 
+    color:white;
+    transform: scale(1.1);
+} 

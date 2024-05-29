@@ -141,14 +141,16 @@ aMassParser=mass_Pdf_Parser(
                                             'Pepper Canyon Apartments',
                                             'Preuss School',
                                             'Price Center Plaza',
-                                            'Piedra Apartments',
+                                            'Piedra Apartments', 
+                                            'Price Center West ‐ Target',
 
                                             'Cala',
                                             'Cater Hall',
                                             'Canyon Vista',
                                             'Center Hall',
                                             'Center Hall ‐ Outside Bike Rack',
-                                            'Coast Graduate Housing',
+                                            'Coast Graduate Housing', 
+                                            'Computer Science & Engineering Building',
 
                                             'Scholars Drive N',
                                             'Scholars Drive North',
@@ -165,7 +167,9 @@ aMassParser=mass_Pdf_Parser(
                                             'Geisel Library',
 
                                             'Ridge Walk Academic',
+                                            'Ridge walk Academic Complex',
                                             'Rita Atkinson',
+                                            'RIMAC',
 
                                             'One Miramar Street, Building 4',
                                             'Otterson Hall',
@@ -173,22 +177,28 @@ aMassParser=mass_Pdf_Parser(
 
                                             'Innovation Lane', 
                                             'Design & Innovation Building',
+
                                             'UC San Diego Campus',
+                                            'UCSD Medical Center ‐ La Jolla',
+
                                             'Jacobs Medical Center',
                                             'Neighborhood ‐ Coast Apartments',
-                                            'Erc Footbridge'
+
+                                            'Erc Footbridge',  
+                                            'Equality Lane/ Canyon Vista',
+                                            
+                                            'Halicioglu Data Science Institute',
 
                                             'Latin America Hall & North America Hall',
                                             'Library Walk',
                                             
                                             'Warren Lecture Hall',
-                                            
 
                                             'Parking Lot P701',
 
                                             'York Hall',
                                             'Franklin Antonio Hall',
-                                            
+                                           
                                             'Argo Hall',
                                             'Applied Physics and Mathematics',
                                             'Atkinson Hall'
@@ -251,12 +261,12 @@ filtered_df = master_df_sorted[
             ((master_df_sorted['Crime'] == 'Petty Theft') & master_df_sorted['Summary'].str.contains('bicycle|scooter|bike', case=False, na=False))
             ]
   
-filtered_df['Time Occurred']=filtered_df['Time Occurred'].apply(time_parser, args=(True,))
+filtered_df.loc[:, 'Time Occurred'] = filtered_df['Time Occurred'].apply(time_parser, args=(True,))
 
 
 
 
-conn = sqlite3.connect('police_data.db')
+conn = sqlite3.connect(f'{pathlib.Path(__file__).resolve().parent}/police_data.db')
 
 # Write the DataFrame to the SQLite3 database
 filtered_df.to_sql('users', conn, if_exists='replace', index=False)

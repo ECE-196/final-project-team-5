@@ -9,11 +9,36 @@
  
   <body >   
    
-  <h2>Risk Level</h2> 
+  <h1>DEBUG MENU</h1>
+  
+  <br> 
+  
+  <div class="options_class">
+  <h2>[TEST] - Current Population Density</h2> 
   <div class="risk_class" id="risk_id">  
     HIGH
-  </div>  
-  
+  </div>   
+  </div>
+
+  <br> 
+
+  <div class="options_class">
+  <h2>ALL GET ROUTES</h2>
+  <a href="/all/Geisel_Library"><button id="all_route_geisel">ALL GEISEL DATA</button></a>
+  <a href="/recent/Geisel_Library"><button id="recent_route_geisel">RECENT GEISEL DATA</button></a> 
+  <a href="/police_data_time"><button id="time_count_route">TIMES STOLEN DATA</button></a>
+  <a href="/police_data_location"><button id="location_count_route">LOCATIONS STOLEN DATA</button></a>
+  </div>
+
+  <br>  
+
+  <div class="options_class">
+  <h2>REFRESH DATA</h2>
+  <div id="error_bar"></div> 
+  <br>
+  <button id="scrape_pd_data_button">SCRAPE DATA</button>
+  <button id="update_pd_data_button">UPDATE DATA</button>
+  </div>
 
   <script src="/dummy.js"></script> 
   
