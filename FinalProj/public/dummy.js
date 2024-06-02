@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     var riskDiv = document.getElementById("risk_id");  
     var errorDiv = document.getElementById("error_bar"); 
     var scrapeButton = document.getElementById("scrape_pd_data_button");
-    var updateDataButton = document.getElementById("update_pd_data_button");
+    var updateDataButton = document.getElementById("update_pd_data_button"); 
 
     function disable_button(button){
         button.disabled=true;

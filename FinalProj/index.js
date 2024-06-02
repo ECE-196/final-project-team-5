@@ -122,7 +122,8 @@ app.get('/update_pdfs',(req, res)=>{
         else if(stderr){res.json({"output":"BAD_STDERR"})} 
         else {res.json({"output":"SUCCESS"})}; 
     });
-}); 
+});  
+
 
 
 
@@ -166,7 +167,9 @@ client.on('error', (err) => {
 
 client.on('message', (topic, message) => {
     console.log(`Received message on topic "${topic}": ${message.toString()}`); 
-    var theDict = JSON.parse(message);
+    var theDict  
+    try{theDict = JSON.parse(message);}  
+    catch(error){return;}
     const theDatabase = new DataBase('example.db'); 
 
     theDatabase.manageDB((db)=>{ 

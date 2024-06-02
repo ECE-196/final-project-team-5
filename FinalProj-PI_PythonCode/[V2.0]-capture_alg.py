@@ -56,7 +56,7 @@ class ThresholdDataBase:
     
 
 class MQTTClient: 
-    def __init__(self, a_broker_url="", a_broker_port=0, a_username="", a_password="",a_publish_rate=1): 
+    def __init__(self, a_checker, a_broker_url="", a_broker_port=0, a_username="", a_password="",a_publish_rate=1, a_state="ACTIVE", a_reciever_topic='test/topic'): 
         
         self.publish_rate=a_publish_rate
         self.client = mqtt.Client()
@@ -66,11 +66,22 @@ class MQTTClient:
         self.client.connect(a_broker_url, a_broker_port)
         self.client.loop_start()  
 
+        #On_Message related code.
+        self.checker=a_checker
+        self.client.on_message=self.check_message 
+        self.client.subscribe(a_reciever_topic)
+        self.state=a_state
 
     def publish(self,topic,message): 
         print(f"published {message} on {topic}")
         self.client.publish(topic, message)  
-        
+
+    def switch_state(self):  
+        if self.state=="ACTIVE":self.state="INACTIVE"
+        elif self.state=="INACTIVE":self.state="ACTIVE" 
+
+    def check_message(self, client, userdata, msg): 
+        if self.checker(msg.payload.decode()): self.switch_state() 
     
     def __del__(self): 
         self.client.loop_stop() 
@@ -176,12 +187,12 @@ class AlgorithmObject:
         return f' {{\"risk_lvl_text\": \"{self.person_risk_lvl[round(risk_lvl)]}\", \"risk_lvl\": {risk_lvl}, \"location\": \"{self.location}\"}}'
 
         
+LOCATION_TAG='Geisel Library' 
+MAIN_TOPIC='test/topic'
 
 myNBT=NonBlockingTimer()  
 myNBT2=NonBlockingTimer() 
-myNBT4=NonBlockingTimer()
-
-
+myNBT4=NonBlockingTimer() 
 myThresholdDB=ThresholdDataBase ( 
                                 a_db_name=f"{pathlib.Path(__file__).resolve().parent}/threshold.db",
                                 a_table_name="thresholds"
@@ -193,7 +204,7 @@ myAO=AlgorithmObject            (
                                 a_model=f'{pathlib.Path(__file__).resolve().parent}/yolov8n.pt', 
                                 a_priority="speed",
                                 a_database=myThresholdDB, 
-                                a_location='Geisel Library'
+                                a_location=LOCATION_TAG
                                 )
 
 myMQ=MQTTClient                 (
@@ -201,12 +212,19 @@ myMQ=MQTTClient                 (
                                 a_broker_port=8883, 
                                 a_username= "hivemq.webclient.1714355997131", 
                                 a_password="D:k.0tg9@a53bJCB!uMO",  
-                                a_publish_rate=5
+                                a_publish_rate=5,
+                                a_checker = lambda x: x == LOCATION_TAG, 
+                                a_reciever_topic=MAIN_TOPIC
                                 )
 
 while True:  
     myAO.capture_people() 
-    myNBT2.nonBlock(logic=myMQ.publish, time_interval=myMQ.publish_rate,  topic="test/topic", message=myAO.calculate_risk())
+
+    if myMQ.state == 'ACTIVE':
+        myNBT2.nonBlock(logic=myMQ.publish, time_interval=myMQ.publish_rate,  topic=MAIN_TOPIC, message=myAO.calculate_risk()) 
+    elif myMQ.state =='INACTIVE': 
+        myNBT.nonBlock(logic = lambda :print("INACTIVE"), time_interval=2)
+
     myNBT4.nonBlock(logic=myAO.write_thresh_to_db, time_interval=300)
     
     
